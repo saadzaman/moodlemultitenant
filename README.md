@@ -77,9 +77,12 @@ _File: `local/iomad/db/install.xml`_
 
 ## Context Level: Company
 
-To leverage Moodle’s capability system per tenant, Iomad introduces a new context level under the system context.
+Iomad introduces a custom **Company** context level under Moodle’s system context to scope tenant-specific permissions. By leveraging this context:
 
-**What it achieves:** Allows `require_capability()` calls to be scoped to a company, blocking users from executing actions outside their tenant.
+- **Isolation:** Capabilities granted here apply only within a single company.  
+- **Hierarchy:** Company contexts inherit from the system context for permission checks, allowing parent-level grants to cascade if desired.  
+
+### 3.1 Context Class Definition
 
 _File: `lib/classes/context/company.php`_
 ```php
@@ -92,7 +95,7 @@ class company extends context {
             throw new coding_exception('Invalid context level');
         }
     }
-    public static function instance($companyid, $strictness = MUST_EXIST) {
+    public static function instance(int $companyid, int $strictness = MUST_EXIST) {
         return parent::instance(self::LEVEL, $companyid, $strictness);
     }
     public static function get_possible_parent_levels(): array {
@@ -100,10 +103,47 @@ class company extends context {
     }
 }
 ```
+- **LEVEL = 13**: Unique identifier for the Company context.  
+- **Parent**: Always under `CONTEXT_SYSTEM` (no nested companies).  
+- **Instantiation**: Use `company::instance($companyid)` to obtain the context object.  
 
-- **LEVEL=13**: New numeric context code.
-- **Parent**: Always under system context (no nested contexts).
-- **Usage**: Pass `$companycontext` to `require_capability()` for any company‑scoped operation.
+### 3.2 Capability Definition Snippet
+
+_File: `local/iomad/db/access.php`_
+```php
+$capabilities = [
+    'local/iomad:managecompany' => [
+        'captype'      => 'write',
+        'contextlevel' => CONTEXT_COMPANY,
+        'archetypes'   => [
+            'manager' => CAP_ALLOW,
+        ],
+    ],
+    // ... other company-scoped capabilities
+];
+```
+
+This declares `local/iomad:managecompany` at the **Company** context, making it appear only when editing roles within that context.  
+
+### 3.3 Usage Example
+
+```php
+use core\context\company;
+use local_iomad\lib\company_user;
+
+// Determine current user’s company context
+$companyid      = company_user::companyid();
+$companycontext = company::instance($companyid);
+
+// Enforce the capability before proceeding
+require_capability('local/iomad:managecompany', $companycontext);
+```
+
+### 3.4 Managing Capabilities Within Context
+
+- **UI Scope:** The role editor displays `local/iomad:managecompany` only on Company-level role assignments—System context does not list it.  
+- **Context Inheritance:** Granting the capability at the System context (via code) will automatically satisfy Company-level checks, since System is a parent.  
+- **Best Practice:** To maintain strict per-tenant separation, assign roles carrying `local/iomad:managecompany` directly within each Company context.  
 
 ---
 
