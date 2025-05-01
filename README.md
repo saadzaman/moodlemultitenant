@@ -31,7 +31,7 @@ Table of Contents
 
 ---
 
-Overview
+##Overview
 
 Iomad extends Moodle by introducing a **company** abstraction as the fundamental tenant unit. Each company is isolated at every layer:
 
