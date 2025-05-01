@@ -31,7 +31,7 @@ Table of Contents
 
 ---
 
-##Overview
+Overview
 
 Iomad extends Moodle by introducing a **company** abstraction as the fundamental tenant unit. Each company is isolated at every layer:
 
@@ -78,7 +78,7 @@ What they do: Link core Moodle entities to companies, enabling join-based isolat
 
 ---
 
-Context Level: Company
+3 Context Level: Company
 
 To leverage Moodle’s capability system per tenant, Iomad introduces a new context level under the system context.
 
@@ -108,7 +108,7 @@ class company extends context {
 
 ---
 
-Local API Classes
+4 Local API Classes
 
 Iomad provides PHP classes to abstract tenant-specific operations, minimizing direct DB queries in your own code.
 
